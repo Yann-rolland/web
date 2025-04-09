@@ -124,3 +124,4 @@ DELETE /books/<book_id>
 - Si la commande `make` n’est pas reconnue, ajoutez manuellement le dossier contenant `make.exe` à votre variable d’environnement `PATH`.
 - Il est recommandé d’utiliser Git Bash, PowerShell ou WSL pour éviter les problèmes liés aux chemins ou à l'encodage des commandes dans le terminal.
 - En cas d’erreur lors de l’exécution des commandes Makefile, vérifiez que Docker est bien lancé et que les conteneurs sont en cours d’exécution (`make docker-up`).
+"# web" 
