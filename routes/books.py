@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify
-from models import db, Book
 from datetime import datetime
+
+from flask import Blueprint, jsonify, request
+from models import Book, db
 
 books_bp = Blueprint('books', __name__)
 
@@ -80,3 +81,66 @@ def delete_book(id):
     db.session.delete(book)
     db.session.commit()
     return jsonify({'message': 'Book deleted successfully'})
+
+
+# 🔹 Endpoint pour emprunter un livre
+@books_bp.route('/books/<int:book_id>/borrow', methods=['POST'])
+def borrow_book(book_id):
+    data = request.get_json()
+ 
+    # Vérifie que student_id est bien fourni
+    if not data or 'student_id' not in data:
+        return jsonify({'error': 'student_id is required'}), 400
+ 
+    student_id = data['student_id']
+ 
+    # Vérifie si le livre existe
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+ 
+    # Vérifie si l'étudiant existe
+    from models import Student, StudentBook
+    student = Student.query.get(student_id)
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
+ 
+    # Crée un enregistrement d'emprunt avec la date actuelle
+    borrow = StudentBook(student_id=student_id, book_id=book_id, borrow_date=datetime.utcnow())
+    db.session.add(borrow)
+    db.session.commit()
+ 
+    return jsonify({'message': 'Book borrowed successfully'}), 201
+ 
+# 🔹 Endpoint pour rendre un livre
+@books_bp.route('/books/<int:book_id>/return', methods=['POST'])
+def return_book(book_id):
+    data = request.get_json()
+ 
+    # Vérifie que student_id est fourni
+    if not data or 'student_id' not in data:
+        return jsonify({'error': 'student_id is required'}), 400
+ 
+    student_id = data['student_id']
+ 
+    # Vérifie si le livre existe
+    book = Book.query.get(book_id)
+    if not book:
+        return jsonify({'error': 'Book not found'}), 404
+ 
+    # Vérifie si l'étudiant existe
+    from models import Student, StudentBook
+    student = Student.query.get(student_id)
+    if not student:
+        return jsonify({'error': 'Student not found'}), 404
+ 
+    # Recherche de l'enregistrement d'emprunt actif (non rendu)
+    borrow = StudentBook.query.filter_by(student_id=student_id, book_id=book_id, return_date=None).first()
+    if not borrow:
+        return jsonify({'error': 'No active borrow record found for this student and book'}), 404
+ 
+    # Marque le livre comme rendu (date de retour = maintenant)
+    borrow.return_date = datetime.utcnow()
+    db.session.commit()
+ 
+    return jsonify({'message': 'Book returned successfully'}), 200
